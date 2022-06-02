@@ -23,8 +23,4 @@ router.get('/', getUsers);
 // create new user
 router.post('/', createUser);
 
-
-
-
-
 module.exports.userRouter = router;
