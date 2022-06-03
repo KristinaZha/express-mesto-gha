@@ -88,27 +88,13 @@ const likeCard = (req, res) => {
 
 //  убрать лайк с карточки
 
-const dislikeCard = (req, res) =>
-  card
-    .findByIdAndUpdate(
-      req.params.cardId,
-      { $pull: { likes: req.user._id } },
-      { new: true },
-    )
+const dislikeCard = (req, res) => card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
     .then((like) => {
-      if (!like) {
-        return res
-          .status(ERROR_CODE_404)
-          .send({ message: 'Переданы некорректные данные' });
-      }
-      res.status(200).send(like);
-    })
+      if (!like) { return res.status(ERROR_CODE_404).send({ message: 'Переданы некорректные данные' }); }
+      res.status(200).send(like); })
     .catch((err) => {
-      if (err.kind === 'ObjectId') {
-        return res
-          .status(ERROR_CODE_404)
-          .send({ message: 'Запрашиваемый id некоректен' });
-      }
+      if (err.kind === 'ObjectId') { return res
+          .status(ERROR_CODE_404).send({ message: 'Запрашиваемый id некоректен' }); }
       return res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
     });
 
