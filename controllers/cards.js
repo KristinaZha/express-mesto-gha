@@ -1,3 +1,7 @@
+/* eslint-disable brace-style */
+/* eslint-disable semi */
+/* eslint-disable consistent-return */
+/* eslint-disable max-len */
 const card = require('../models/card');
 
 const {
@@ -23,18 +27,14 @@ const getCards = (_, res) => {
 const createCard = (req, res) => {
   const { name, link, owner = req.user._id } = req.body;
   if (!name || !link || !owner) {
-    return res
-      .status(ERROR_CODE_400)
-      .send({ message: 'Переданы некорректные данные' });
+    return res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные' });
   }
 
-  card
-    .create({ name, link, owner })
+  card.create({ name, link, owner })
     .then((newCard) => {
       res.status(201).send(newCard);
     })
-    .catch(() => res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' })
-    ),
+    .catch(() => res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' }))
 };
 
 // удаляет карточку по идентификатору
@@ -89,14 +89,17 @@ const likeCard = (req, res) => {
 //  убрать лайк с карточки
 
 const dislikeCard = (req, res) => card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
-    .then((like) => {
-      if (!like) { return res.status(ERROR_CODE_404).send({ message: 'Переданы некорректные данные' }); }
-      res.status(200).send(like); })
-    .catch((err) => {
-      if (err.kind === 'ObjectId') { return res
-          .status(ERROR_CODE_404).send({ message: 'Запрашиваемый id некоректен' }); }
-      return res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
-    });
+  .then((like) => {
+    if (!like) { return res.status(ERROR_CODE_404).send({ message: 'Переданы некорректные данные' }); }
+    res.status(200).send(like);
+  })
+  .catch((err) => {
+    if (err.kind === 'ObjectId') {
+      return res
+        .status(ERROR_CODE_404).send({ message: 'Запрашиваемый id некоректен' });
+    }
+    return res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
+  });
 
 module.exports = {
   likeCard,
