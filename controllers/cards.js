@@ -7,8 +7,9 @@ const card = require('../models/card');
 const {
   ERROR_CODE_400,
   ERROR_CODE_404,
+  ERROR_CODE_403,
   ERROR_CODE_500,
-} = require('../utils/errors');
+} = require('../errors/errors');
 
 // возвращает все карточки
 const getCards = (_, res) => {
@@ -45,7 +46,7 @@ const deleteCard = (req, res) => {
     .findByIdAndRemove(id)
     .then((pic) => {
       if (!pic) {
-        res.status(ERROR_CODE_404).send({ message: 'Карточка не найдена' });
+        res.status(ERROR_CODE_403).send({ message: 'Попытка удалить чужую карточку' });
         return;
       }
       res.status(200).send({ message: 'Карточка удалена' });
