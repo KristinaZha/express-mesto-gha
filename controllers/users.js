@@ -110,7 +110,7 @@ const createUser = (req, res, next) => {
       if (err.name === 'ValidationError') {
         return next(new Error404('Проверьте данные'));
       }
-      if (err.kind === 'ValidationError') {
+      if (err.code === 11000) {
         return next(new Error409('Пользователь существует'));
       }
       return next(err);

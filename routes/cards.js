@@ -11,7 +11,7 @@ const {
 const regEx = /(?:(http|https):\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+/;
 
 // delete card
-router.delete('/:cardId', celebrate({
+router.delete('/:id', celebrate({
   params: Joi.object().keys({
     cardID: Joi.string().length(24).hex().required(),
   }),
@@ -30,14 +30,14 @@ router.post('/', celebrate({
 }), createCard);
 
 // put like
-router.put('/:cardId/likes', celebrate({
+router.put('/:id/likes', celebrate({
   params: Joi.object().keys({
     cardID: Joi.string().length(24).hex().required(),
   }),
 }), likeCard);
 
 // delete like
-router.delete('/:cardId/likes', celebrate({
+router.delete('/:id/likes', celebrate({
   params: Joi.object().keys({
     cardID: Joi.string().length(24).hex().required(),
   }),

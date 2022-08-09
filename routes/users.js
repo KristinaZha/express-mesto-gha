@@ -25,6 +25,9 @@ router.patch('/me/avatar', celebrate({
   }),
 }), updateUserAvatar);
 
+// получение информации  пользователя
+router.get('/me ', getCurrentUser);
+
 // get user id
 router.get('/:id', celebrate({
   params: Joi.object().keys({
@@ -34,8 +37,5 @@ router.get('/:id', celebrate({
 
 // get users
 router.get('/', getUsers);
-
-// получение информации  пользователя
-router.get('/me ', getCurrentUser);
 
 module.exports.userRouter = router;

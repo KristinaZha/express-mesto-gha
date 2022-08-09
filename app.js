@@ -4,7 +4,7 @@ const { errors, celebrate, Joi } = require('celebrate');
 const { userRouter } = require('./routes/users');
 const { cardRouter } = require('./routes/cards');
 const { createUser, login } = require('./controllers/users');
-const { auth } = require('./middlewares/auth');
+const auth = require('./middlewares/auth');
 const Error404 = require('./errors/Error404');
 
 const regEx = /(?:(http|https):\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+/;

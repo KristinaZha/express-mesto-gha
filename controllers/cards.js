@@ -18,10 +18,6 @@ const getCards = (_, res, next) => {
 
 const createCard = (req, res, next) => {
   const { name, link, owner = req.user._id } = req.body;
-  if (!name || !link || !owner) {
-    throw new Error400('Ошибка валидации. Имя, ссылка или автор поста не найдены.');
-  }
-
   card.create({ name, link, owner })
     .then((newCard) => {
       res.status(201).send(newCard);
