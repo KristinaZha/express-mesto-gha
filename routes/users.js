@@ -26,7 +26,7 @@ router.patch('/me/avatar', celebrate({
 }), updateUserAvatar);
 
 // получение информации  пользователя
-router.get('/me ', getCurrentUser);
+router.get('/me', getCurrentUser);
 
 // get user id
 router.get('/:id', celebrate({

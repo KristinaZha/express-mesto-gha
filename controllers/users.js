@@ -20,7 +20,7 @@ const updateProfile = (req, res, next) => {
       if (!changeUser) {
         throw new Error404('Пользователь не существует');
       }
-      return res.status(200).send({ message: 'Информация успешно обновлена' });
+      return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -36,7 +36,12 @@ const updateProfile = (req, res, next) => {
 // обновление аватара
 const updateUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
-  user.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
+  user
+    .findByIdAndUpdate(
+      req.user._id,
+      { avatar },
+      { new: true, runValidators: true },
+    )
     .then((user) => {
       if (!user) {
         throw new Error404('Пользователь не существует');
@@ -85,13 +90,10 @@ const getCurrentUser = (req, res, next) => {
 // создание нового пользователя
 const createUser = (req, res, next) => {
   const {
-    name,
-    about,
-    avatar,
-    email,
-    password,
+    name, about, avatar, email, password,
   } = req.body;
-  bcrypt.hash(password, 10)
+  bcrypt
+    .hash(password, 10)
     .then((hash) => user.create({
       name,
       about,
@@ -125,19 +127,22 @@ const getUsers = (_, res, next) => {
     .then((users) => {
       res.status(200).send(users);
     })
-    .catch((next));
+    .catch(next);
 };
 
 // логин пользователя
 const login = (req, res, next) => {
   const { email, password } = req.body;
-  return user.findUserByCredentials(email, password)
+  return user
+    .findUserByCredentials(email, password)
     .then((userAuth) => {
       if (!userAuth) {
         throw new Error400('Пользователь не найден');
       }
       res.send({
-        token: jwt.sign({ _id: userAuth._id }, 'some-secret-key', { expiresIn: '7d'}),
+        token: jwt.sign({ _id: userAuth._id }, 'some-secret-key', {
+          expiresIn: '7d',
+        }),
       });
     })
     .catch(() => {

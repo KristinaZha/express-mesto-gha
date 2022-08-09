@@ -13,7 +13,7 @@ const regEx = /(?:(http|https):\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()
 // delete card
 router.delete('/:id', celebrate({
   params: Joi.object().keys({
-    cardID: Joi.string().length(24).hex().required(),
+    id: Joi.string().length(24).hex().required(),
   }),
 }), deleteCard);
 
@@ -32,14 +32,14 @@ router.post('/', celebrate({
 // put like
 router.put('/:id/likes', celebrate({
   params: Joi.object().keys({
-    cardID: Joi.string().length(24).hex().required(),
+    id: Joi.string().length(24).hex().required(),
   }),
 }), likeCard);
 
 // delete like
 router.delete('/:id/likes', celebrate({
   params: Joi.object().keys({
-    cardID: Joi.string().length(24).hex().required(),
+    id: Joi.string().length(24).hex().required(),
   }),
 }), dislikeCard);
 
