@@ -1,16 +1,14 @@
-/* eslint-disable object-curly-newline */
+/* eslint-disable no-shadow */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const user = require('../models/user');
-
-const {
-  ERROR_CODE_400,
-  ERROR_CODE_404,
-  ERROR_CODE_500,
-} = require('../errors/errors');
+const Error400 = require('../errors/Error400');
+const Error404 = require('../errors/Error404');
+const Error409 = require('../errors/Error409');
+const Error401 = require('../errors/Error401');
 
 // обновление профиля
-const updateProfile = (req, res) => {
+const updateProfile = (req, res, next) => {
   const { name, about } = req.body;
   user
     .findByIdAndUpdate(
@@ -18,53 +16,56 @@ const updateProfile = (req, res) => {
       { name, about },
       { new: true, runValidators: true },
     )
-    // eslint-disable-next-line consistent-return
     .then((changeUser) => {
       if (!changeUser) {
-        return res.status(ERROR_CODE_400).send('Переданы некорректные данные');
+        throw new Error404('Пользователь не существует');
       }
-      res.send({ message: 'Информация успешно обновлена' });
+      return res.status(200).send({ message: 'Информация успешно обновлена' });
     })
-    .catch(() => res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return next(new Error400('Не соответствует требованию.'));
+      }
+      if (err.kind === 'ObjectId') {
+        return next(new Error400('ID пользователя передано некорретно.'));
+      }
+      return next(err);
+    });
 };
-
 // обновление аватара
-const updateUserAvatar = (req, res) => {
+const updateUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
-  user
-    .findByIdAndUpdate(req.user._id, { avatar })
-    // eslint-disable-next-line consistent-return
-    .then(() => {
-      if (!avatar) {
-        return res.status(ERROR_CODE_400).send('Переданы некорректные данные');
-      }
-      res.send({ message: 'Аватар успешно обновлен' });
-    })
-    .catch(() => res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' }),
-    );
-};
-
-// получение одного пользователя
-const getUser = (req, res) => {
-  user
-    .findById(req.params.id)
-    // eslint-disable-next-line no-shadow
+  user.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        res
-          .status(ERROR_CODE_404)
-          .send({ message: 'Запрашиваемый пользователь не найден' });
-        return;
+        throw new Error404('Пользователь не существует');
       }
-      res.status(200).send(user);
+      return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.kind === 'ObjectId') {
-        return res
-          .status(ERROR_CODE_400)
-          .send({ message: 'Запрашиваемый id некоректен' });
+        return next(new Error400('Данные переданы некорретно.'));
       }
-      return res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
+      return next(err);
+    });
+};
+
+// получение одного пользователя
+const getUser = (req, res, next) => {
+  const { id } = req.params;
+  user
+    .findById(id)
+    .then((user) => {
+      if (!user) {
+        throw new Error404('Пользователь не существует');
+      }
+      return res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.kind === 'ObjectId') {
+        return next(new Error400('Данные переданы некорретно.'));
+      }
+      return next(err);
     });
 };
 // получение информвции о пользователе
@@ -78,60 +79,68 @@ const getCurrentUser = (req, res, next) => {
       next(err);
     });
 };
-// создание нового пользователя
-// eslint-disable-next-line consistent-return
-const createUser = (req, res) => {
-  const { name, about, avatar, email } = req.body;
 
-  bcrypt
-    .hash(req.body.password, 10)
-    .then((hash) => {
-      user.create({
-        name,
-        about,
-        avatar,
-        email,
-        password: hash,
+// создание нового пользователя
+const createUser = (req, res, next) => {
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+
+  bcrypt.hash(password, 10)
+    .then((hash) => user.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
+    .then((user) => {
+      res.status(201).send({
+        email: user.email,
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
       });
     })
-    .then(() => {
-      res.status(201).send({ message: 'Ok' });
-    })
-    .catch(() =>
-      // eslint-disable-next-line implicit-arrow-linebreak
-      res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' })
-    );
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return next(new Error404('Проверьте данные'));
+      }
+      if (err.kind === 'ValidationError') {
+        return next(new Error409('Пользователь существует'));
+      }
+      return next(err);
+    });
 };
 
 // получение всех пользователей
-const getUsers = (_, res) => {
+const getUsers = (_, res, next) => {
   user
     .find({})
     .then((users) => {
       res.status(200).send(users);
     })
-    .catch(() => {
-      res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
-    });
+    .catch((next));
 };
+
 // логин пользователя
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
-  return user
-    .findUserByCredentials(email, password)
+  return user.findUserByCredentials(email, password)
     .then((userAuth) => {
-      const token = jwt.sign({ id: userAuth._id }, 'some-secret-key', {
-        expiresIn: '7d',
+      if (!userAuth) {
+        throw new Error400('Пользователь не найден');
+      }
+      res.send({
+        token: jwt.sign({ _id: userAuth._id }, 'some-secret-key', { expiresIn: '7d'}),
       });
-      res
-        .cookie('jwt', token, {
-          maxAge: 100,
-          httpOnly: true,
-        })
-        .send({ data: token });
     })
-    .catch((err) => {
-      res.status(401).send({ message: err.message });
+    .catch(() => {
+      next(new Error401('Данные неверны'));
     });
 };
 

@@ -1,11 +1,11 @@
 const jwt = require('jsonwebtoken');
+const Error401 = require('../errors/Error401');
 
-// eslint-disable-next-line consistent-return
-module.exports = (req, res, next) => {
+module.exports = (req, _, next) => {
   const { authorization } = req.headers;
 
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    return res(401).send({ message: 'Пройдите авторизацию' });
+    throw new Error401('Пройдите авторизацию');
   }
   const token = authorization.replace('Bearer ', '');
   let payload;
@@ -13,8 +13,7 @@ module.exports = (req, res, next) => {
   try {
     payload = jwt.verify(token, 'some-secret-key');
     req.user = payload;
-    next();
   } catch (err) {
-    return res.status(401).send({ message: 'Пройдите авторизацию' });
-  }
+    return next(new Error401('Пройдите авторизацию'));
+  } return next();
 };

@@ -1,106 +1,97 @@
-/* eslint-disable brace-style */
-/* eslint-disable semi */
-/* eslint-disable consistent-return */
-/* eslint-disable max-len */
 const card = require('../models/card');
-
-const {
-  ERROR_CODE_400,
-  ERROR_CODE_404,
-  ERROR_CODE_403,
-  ERROR_CODE_500,
-} = require('../errors/errors');
+const Error400 = require('../errors/Error400');
+const Error404 = require('../errors/Error404');
+const Error403 = require('../errors/Error403');
+const Error409 = require('../errors/Error409');
 
 // возвращает все карточки
-const getCards = (_, res) => {
+const getCards = (_, res, next) => {
   card
     .find({})
     .then((cards) => {
       res.status(200).send(cards);
     })
-    .catch(() => {
-      res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
-    });
+    .catch((next));
 };
 
 // создаёт карточку
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link, owner = req.user._id } = req.body;
   if (!name || !link || !owner) {
-    return res.status(ERROR_CODE_400).send({ message: 'Переданы некорректные данные' });
+    throw new Error400('Ошибка валидации. Имя, ссылка или автор поста не найдены.');
   }
 
   card.create({ name, link, owner })
     .then((newCard) => {
       res.status(201).send(newCard);
     })
-    .catch(() => res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return next(new Error400('Проверьте правильность введенных данных.'));
+      }
+      return next(err);
+    });
 };
 
 // удаляет карточку по идентификатору
 
-const deleteCard = (req, res) => {
-  const id = req.params.cardId;
+const deleteCard = (req, res, next) => {
+  const { id } = req.params;
   card
-    .findByIdAndRemove(id)
+    .findById(id).orFail(() => new Error409('Нет карточки по заданному id'))
     .then((pic) => {
-      if (!pic) {
-        res.status(ERROR_CODE_403).send({ message: 'Попытка удалить чужую карточку' });
-        return;
+      if (!pic.owner.equals(req.user._id)) {
+        return next(new Error403('Попытка удалить чужую карточку'));
       }
-      res.status(200).send({ message: 'Карточка удалена' });
+      return pic.remove().then(() => res.send({ message: 'Карточка удалена' }));
     })
-    .catch((err) => {
-      if (err.kind === 'ObjectId') {
-        return res
-          .status(ERROR_CODE_400)
-          .send({ message: 'Карточка не найдена' });
-      }
-      return res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
-    });
+    .catch(next);
 };
 
 //  поставить лайк карточке
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
+  const { id } = req.params;
   card
     .findByIdAndUpdate(
-      req.params.cardId,
+      id,
       { $addToSet: { likes: req.user._id } },
       { new: true },
     )
     .then((like) => {
       if (!like) {
-        return res
-          .status(ERROR_CODE_404)
-          .send({ message: 'Переданы некорректные данные' });
+        throw new Error404('Картинка не найдена или удалена');
       }
-      res.status(200).send(like);
+      return res.status(200).send({ message: 'Вы поставили лайк' });
     })
     .catch((err) => {
       if (err.kind === 'ObjectId') {
-        return res
-          .status(ERROR_CODE_404)
-          .send({ message: 'Запрашиваемый id некоректен' });
+        return next(new Error400('Картинка не найдена'));
       }
-      return res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
+      return next(err);
     });
 };
-
 //  убрать лайк с карточки
-
-const dislikeCard = (req, res) => card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
-  .then((like) => {
-    if (!like) { return res.status(ERROR_CODE_404).send({ message: 'Переданы некорректные данные' }); }
-    res.status(200).send(like);
-  })
-  .catch((err) => {
-    if (err.kind === 'ObjectId') {
-      return res
-        .status(ERROR_CODE_404).send({ message: 'Запрашиваемый id некоректен' });
-    }
-    return res.status(ERROR_CODE_500).send({ message: 'Серверная ошибка' });
-  });
+const dislikeCard = (req, res, next) => {
+  const { id } = req.params;
+  card.findByIdAndUpdate(
+    id,
+    { $pull: { likes: req.user._id } },
+    { new: true },
+  )
+    .then((like) => {
+      if (!like) {
+        throw new Error404('Картинка не найдена или удалена ранее');
+      }
+      return res.status(200).send({ message: 'Вы удалили лайк' });
+    })
+    .catch((err) => {
+      if (err.kind === 'ObjectId') {
+        return next(new Error400('Картинка не найдена'));
+      }
+      return next(err);
+    });
+};
 
 module.exports = {
   likeCard,

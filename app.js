@@ -1,11 +1,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { celebrate, Joi } = require('celebrate');
+const { errors, celebrate, Joi } = require('celebrate');
 const { userRouter } = require('./routes/users');
 const { cardRouter } = require('./routes/cards');
-const { ERROR_CODE_404 } = require('./errors/errors');
 const { createUser, login } = require('./controllers/users');
 const { auth } = require('./middlewares/auth');
+const Error404 = require('./errors/Error404');
 
 const regEx = /(?:(http|https):\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+/;
 
@@ -47,10 +47,16 @@ app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 
 // обработчик несуществующих роутов
-app.use((_, res) => {
-  res.status(ERROR_CODE_404).send({ message: 'Страница по указанному маршруту не найдена' });
-});
+app.use((_, res, next) => next(new Error404('Страница по указанному маршруту не найдена')));
 
+app.use(errors());
+
+app.use((error, _, res, next) => {
+  const { statusCode = 500, message } = error;
+
+  res.status(statusCode).send({ message: statusCode === 500 ? 'Ошибка сервера' : message });
+  next();
+});
 app.listen(PORT, () => {
   console.log('Ok!');
 });
