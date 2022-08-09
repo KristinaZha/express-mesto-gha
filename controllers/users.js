@@ -32,6 +32,7 @@ const updateProfile = (req, res, next) => {
       return next(err);
     });
 };
+
 // обновление аватара
 const updateUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
@@ -68,6 +69,7 @@ const getUser = (req, res, next) => {
       return next(err);
     });
 };
+
 // получение информвции о пользователе
 const getCurrentUser = (req, res, next) => {
   user
@@ -89,7 +91,6 @@ const createUser = (req, res, next) => {
     email,
     password,
   } = req.body;
-
   bcrypt.hash(password, 10)
     .then((hash) => user.create({
       name,
