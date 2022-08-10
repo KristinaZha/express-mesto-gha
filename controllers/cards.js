@@ -2,7 +2,6 @@ const card = require('../models/card');
 const Error400 = require('../errors/Error400');
 const Error404 = require('../errors/Error404');
 const Error403 = require('../errors/Error403');
-const Error409 = require('../errors/Error409');
 
 // возвращает все карточки
 const getCards = (_, res, next) => {
