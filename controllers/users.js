@@ -20,7 +20,7 @@ const updateProfile = (req, res, next) => {
       if (!changeUser) {
         throw new Error404('Пользователь не существует');
       }
-      return res.status(200).send(user);
+      return res.status(200).send(changeUser);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {

@@ -35,7 +35,7 @@ const createCard = (req, res, next) => {
 const deleteCard = (req, res, next) => {
   const { id } = req.params;
   card
-    .findById(id).orFail(() => new Error409('Нет карточки по заданному id'))
+    .findById(id).orFail(() => new Error404('Нет карточки по заданному id'))
     .then((pic) => {
       if (!pic.owner.equals(req.user._id)) {
         return next(new Error403('Попытка удалить чужую карточку'));
